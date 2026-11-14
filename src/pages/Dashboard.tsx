@@ -4,7 +4,7 @@ import { Building2, Send, Clock, CalendarCheck, CheckCircle2, XCircle, ChevronRi
 import { useRecs, useStore } from '../lib/store'
 import { Card, StatusBadge, Empty, cx, TierBadge } from '../components/ui'
 import { STATUS_DOT, daysFromToday, fmtDate, fmtShort, relDays, recTitle, todayISO } from '../lib/util'
-import { STATUSES } from '../types'
+import NextUp from '../components/NextUp'
 
 const PIPE = ['Not started', 'Enquiry sent', 'CV mailed', 'Waiting for email id', 'Reply awaited', 'Replied', 'Spoke on call', 'Applied', 'Exam / Interview', 'Offer', 'Rejected', 'Dropped', 'On hold']
 
@@ -63,6 +63,7 @@ export default function Dashboard() {
         <h1 className="text-2xl md:text-3xl font-bold">{greet}, Dr. Devarsh <span className="text-xl">👋</span></h1>
         <p className="text-sm text-slate-500">Your fellowship journey at a glance.</p>
       </div>
+      <NextUp />
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {stats.map(s => (
           <Link key={s.label} to={s.to} className="card p-3.5 flex items-center gap-3 hover:shadow-md transition">

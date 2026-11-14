@@ -59,6 +59,7 @@ export interface Rec {
   original?: Record<string, string> // untouched Excel row (as imported)
   importedAt?: string
   userEdited?: boolean
+  parked?: boolean // set aside for later; excluded from 'Next up'
   updatedAt: number
   deleted?: boolean
 }

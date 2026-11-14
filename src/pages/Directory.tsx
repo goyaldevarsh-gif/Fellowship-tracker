@@ -27,7 +27,7 @@ export default function Directory({ kind }: { kind: Kind }) {
   const [sp, setSp] = useSearchParams(); const nav = useNavigate()
   const [adding, setAdding] = useState<Rec | null>(null)
   const [showF, setShowF] = useState(false)
-  const q = sp.get('q') || '', status = sp.get('status') || '', tier = sp.get('tier') || '', area = sp.get('area') || ''
+  const parked = sp.get('parked') || '', q = sp.get('q') || '', status = sp.get('status') || '', tier = sp.get('tier') || '', area = sp.get('area') || ''
   const spec = sp.get('spec') || '', dur = sp.get('dur') || '', stip = sp.get('stip') || '', win = sp.get('win') || '', sort = sp.get('sort') || 'default', ftype = sp.get('type') || ''
   const set = (k: string, v: string) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n, { replace: true }) }
   const areas = useMemo(() => Array.from(new Set(recs.map(r => r.area).filter(Boolean))).sort(), [recs])
@@ -37,6 +37,7 @@ export default function Directory({ kind }: { kind: Kind }) {
     const s = q.trim().toLowerCase()
     let l = recs.filter(r => {
       if (s && ![r.doctor, r.hospital, r.location, r.type, r.duration, r.notes, r.remarks, r.howToApply, r.eligibility, r.tags.join(' ')].join(' ').toLowerCase().includes(s)) return false
+      if (parked && !r.parked) return false
       if (status && r.status !== status) return false
       if (tier && String(r.tier) !== tier) return false
       if (area && r.area !== area) return false
@@ -56,7 +57,7 @@ export default function Directory({ kind }: { kind: Kind }) {
       institute: (a, b) => recTitle(a).localeCompare(recTitle(b)),
     }
     return [...l].sort(key[sort] || key.default)
-  }, [recs, q, status, tier, area, spec, dur, stip, win, sort, ftype])
+  }, [recs, parked, q, status, tier, area, spec, dur, stip, win, sort, ftype])
 
   const nFilters = [status, tier, area, spec, dur, stip, win, ftype].filter(Boolean).length
   const [t, sub] = TITLES[kind]

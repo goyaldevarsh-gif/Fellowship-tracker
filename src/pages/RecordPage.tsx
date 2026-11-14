@@ -74,6 +74,7 @@ export default function RecordPage() {
             <select className="inp !w-auto" value={String(r.status)} aria-label="Change status" onChange={e => { setStatusTo(e.target.value); setStatusRemark('') }}>
               {!STATUSES.includes(r.status as any) && <option>{String(r.status)}</option>}{STATUSES.map(s => <option key={s}>{s}</option>)}</select>
             <ContactMenu rec={r} />
+            {r.parked && <button className="text-xs text-teal underline" onClick={() => patchRec(r.id, { parked: false })}>Parked for later — unpark</button>}
           </div>
         </div>
         <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-thin -mb-1">
