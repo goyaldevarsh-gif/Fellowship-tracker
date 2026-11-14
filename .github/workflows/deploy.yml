@@ -2,6 +2,8 @@ name: Deploy FellowTrack to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 * * * *'   # hourly refresh of the private calendar feed
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,6 +23,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Private calendar feed (optional)
+        env:
+          DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+          CAL_SECRET: ${{ secrets.CAL_SECRET }}
+        run: |
+          if [ -n "$DATA_TOKEN" ] && [ -n "$CAL_SECRET" ]; then node scripts/make-ics.mjs; else echo "calendar feed not configured"; fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
