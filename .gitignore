@@ -1,0 +1,9 @@
+node_modules
+dist
+*.xlsx
+*.pdf
+*.docx
+db.json
+.env
+.DS_Store
+tmp

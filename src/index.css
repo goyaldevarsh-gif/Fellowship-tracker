@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html, body, #root { height: 100%; }
+body { @apply bg-paper text-navy font-sans antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: #bfe8e4; }
+@layer components {
+.card { @apply bg-white border border-line rounded-2xl shadow-soft; }
+.inp { @apply w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-navy placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal; }
+.lbl { @apply block text-xs font-medium text-slate-500 mb-1; }
+.btn { @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none; }
+.btn-primary { @apply bg-teal text-white hover:bg-teal-600; }
+.btn-navy { @apply bg-navy text-white hover:bg-navy-700; }
+.btn-ghost { @apply bg-white border border-line text-navy hover:bg-navy-50; }
+.btn-danger { @apply bg-red-50 text-red-700 hover:bg-red-100; }
+.chip { @apply inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs text-slate-600 hover:bg-navy-50 cursor-pointer select-none; }
+.chip-on { @apply bg-navy text-white border-navy hover:bg-navy-700; }
+}
+.scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #d6d2ca; border-radius: 8px; }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }

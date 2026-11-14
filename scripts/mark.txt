@@ -1,0 +1,12 @@
+<g>
+  <!-- graduation cap -->
+  <path d="M50 14 L82 27 L50 40 L18 27 Z" fill="#fff"/>
+  <path d="M31 36 V47 C31 52 40 56 50 56 C60 56 69 52 69 47 V36 L50 44 Z" fill="#fff"/>
+  <path d="M82 27 V41" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="82" cy="43" r="3" fill="#fff"/>
+  <!-- femur + knee + tibia -->
+  <path d="M44 56 C46 62 45 66 44 70 C40 72 38 77 42 81 C45 83 49 82 51 80 C53 82 58 83 61 80 C64 76 62 72 58 70 C57 66 56 62 57 56 Z" fill="#fff" opacity="0"/>
+  <path d="M45 58 H58 C58 66 59 68 62 72 C65 77 61 82 56 81 C54 81 52.500 80 51.500 78.500 C50 80.500 47 82 44 81 C39 79 38 74 41 71 C44 68 45 66 45 58 Z" fill="#fff"/>
+  <path d="M46 84 H57 V92 C57 94 56 96 54 96 H49 C47 96 46 94 46 92 Z" fill="#fff"/>
+</g>
+<path d="M14 80 C28 76 44 66 58 46" fill="none" stroke="#14b8a6" stroke-width="5" stroke-linecap="round"/>
