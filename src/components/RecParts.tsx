@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Phone, MessageCircle, Mail, MapPin, Clock, CalendarClock, Copy, ChevronDown } from 'lucide-react'
+import { Phone, MessageCircle, Mail, MapPin, Clock, CalendarClock, Copy, ChevronDown, Paperclip, Share2 } from 'lucide-react'
 import type { Rec, Kind } from '../types'
 import { STATUSES } from '../types'
 import { StatusBadge, TierBadge, Field, Modal, toast, cx } from './ui'
 import { useStore } from '../lib/store'
+import { loadPack, packDocs } from '../lib/pack'
+import { downloadBlob } from '../lib/util'
 import { extractEmails, extractPhones, fillTemplate, mailLink, waLink, fmtShort, relDays, daysFromToday, recTitle } from '../lib/util'
 
 export function ContactMenu({ rec, compact }: { rec: Pick<Rec, 'phone' | 'email' | 'doctor' | 'hospital' | 'location'>; compact?: boolean }) {
@@ -14,7 +16,17 @@ export function ContactMenu({ rec, compact }: { rec: Pick<Rec, 'phone' | 'email'
   const t = data.prefs.templates
   const wa = fillTemplate(t.whatsapp, rec)
   const subj = fillTemplate(t.emailSubject, rec), body = fillTemplate(t.emailBody, rec)
-  const copy = (x: string) => { navigator.clipboard?.writeText(x).then(() => toast('Copied')) }
+  const copy = (x: string) => { navigator.clipboard?.writeText(x).then(() => toast('Copied')).catch(() => toast('Could not copy')) }
+  const [pack, setPack] = useState<{ files: File[]; missing: string[] } | null>(null)
+  useEffect(() => { if (open) loadPack(data).then(setPack).catch(() => setPack({ files: [], missing: [] })) }, [open]) // eslint-disable-line
+  const want = packDocs(data)
+  const share = async (text?: string, title?: string) => {
+    if (!pack || !pack.files.length) return toast(want.length ? 'Files not on this device yet — open Settings and sync' : 'Add CV and LORs in Documents first')
+    const payload: ShareData = { files: pack.files, ...(text ? { text } : {}), ...(title ? { title } : {}) }
+    if (navigator.canShare?.(payload)) {
+      try { await navigator.share(payload) } catch (e: any) { if (e?.name !== 'AbortError') toast('Share failed') }
+    } else { pack.files.forEach(f => downloadBlob(f, f.name)); toast('Sharing not supported here — files downloaded') }
+  }
   if (!phones.length && !emails.length) return <span className="text-xs text-slate-400">No contact available</span>
   return (
     <div className="relative inline-block">
@@ -38,6 +50,16 @@ export function ContactMenu({ rec, compact }: { rec: Pick<Rec, 'phone' | 'email'
                 <a className="btn btn-ghost !p-1.5 text-teal" href={mailLink(e, subj, body)} title="Email with message" aria-label={`Email ${e}`}><Mail size={14} /></a>
                 <button className="btn btn-ghost !p-1.5" onClick={() => copy(e)} aria-label="Copy email"><Copy size={13} /></button>
               </div>))}
+            <div className="border-t border-line mt-1 pt-2 px-1">
+              <div className="text-[11px] uppercase tracking-wide text-slate-400 px-1 mb-1">CV + LORs {want.length ? `(${want.length} files)` : ''}</div>
+              {want.length === 0 ? <div className="text-xs text-slate-400 px-1 pb-1">Add CV / LOR in Documents to send them from here.</div> : (
+                <div className="grid gap-1">
+                  <button className="btn btn-primary !py-1.5 text-xs justify-start" onClick={() => share(wa)}><Share2 size={13} /> Files + message → WhatsApp</button>
+                  <button className="btn btn-ghost !py-1.5 text-xs justify-start" onClick={() => share()}><Paperclip size={13} /> Files only (after opening chat)</button>
+                  <button className="btn btn-ghost !py-1.5 text-xs justify-start" onClick={() => { if (emails[0]) copy(emails[0]); share(body, subj) }}><Mail size={13} /> Files + email text (Mail)</button>
+                </div>)}
+              {pack && pack.missing.length > 0 && <div className="text-[11px] text-amber-700 px-1 pt-1">Not on this device yet: {pack.missing.join(', ')} — sync first.</div>}
+            </div>
             <button className="w-full text-left text-xs text-slate-500 px-2 py-1.5 hover:text-navy" onClick={() => copy(wa)}>Copy WhatsApp message</button>
           </div>
         </>)}
