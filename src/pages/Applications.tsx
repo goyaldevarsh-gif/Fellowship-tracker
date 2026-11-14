@@ -19,11 +19,11 @@ export default function Applications() {
   const ask = (id: string, to: string) => { const r = recs.find(x => x.id === id); if (r && r.status !== to) { setPending({ id, to }); setRemark('') } }
   return (
     <div>
-      <H title="Applications" sub="Move programmes between stages — every change is logged with date and previous status"
+      <H title="Board" sub="Drag a programme to a new stage — every change is logged"
         right={<div className="flex gap-1 bg-white border border-line rounded-xl p-1">
           <button className={cx('btn !py-1 !px-2.5', view === 'board' ? 'btn-navy' : 'text-slate-600')} onClick={() => setView('board')}><LayoutGrid size={14} /> Board</button>
           <button className={cx('btn !py-1 !px-2.5', view === 'table' ? 'btn-navy' : 'text-slate-600')} onClick={() => setView('table')}><Table2 size={14} /> Table</button></div>} />
-      <div className="flex gap-1.5 mb-3">{['', '1', '2', '3'].map(t => <button key={t} className={cx('chip', tier === t && 'chip-on')} onClick={() => setTier(t)}>{t ? `Tier ${t}` : 'All tiers'}</button>)}</div>
+      <div className="flex gap-1.5 mb-3 items-center"><Link to="/fellowships" className="btn btn-ghost !py-1 mr-2">← List</Link>{['', '1', '2', '3'].map(t => <button key={t} className={cx('chip', tier === t && 'chip-on')} onClick={() => setTier(t)}>{t ? `Tier ${t}` : 'All tiers'}</button>)}</div>
       {view === 'board' ? (
         <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-3 items-start">
           {cols.map(s => {

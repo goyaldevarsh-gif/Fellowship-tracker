@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import KindTabs from '../components/KindTabs'
+import { Plus, SlidersHorizontal, LayoutGrid, Scale } from 'lucide-react'
 import type { Kind, Rec } from '../types'
 import { STATUSES } from '../types'
 import { useRecs, useStore } from '../lib/store'
@@ -59,11 +60,11 @@ export default function Directory({ kind }: { kind: Kind }) {
     return [...l].sort(key[sort] || key.default)
   }, [recs, parked, q, status, tier, area, spec, dur, stip, win, sort, ftype])
 
-  const nFilters = [status, tier, area, spec, dur, stip, win, ftype].filter(Boolean).length
+  const nFilters = [status, tier, area, spec, dur, stip, win, ftype, parked].filter(Boolean).length
   const [t, sub] = TITLES[kind]
   return (
     <div>
-      <H title={t} sub={`${recs.length} records · ${sub}`} right={<button className="btn btn-primary" onClick={() => setAdding(newRec(kind, data.recs))}><Plus size={16} /> Add</button>} />
+      <KindTabs right={<>{kind === 'fellowship' && <Link to="/applications" className="btn btn-ghost"><LayoutGrid size={15} /> Board</Link>}<Link to="/compare" className="btn btn-ghost" aria-label="Compare"><Scale size={15} /><span className="hidden sm:inline">Compare</span></Link><button className="btn btn-primary" onClick={() => setAdding(newRec(kind, data.recs))}><Plus size={16} /> Add</button></>} />
       <div className="flex gap-2 mb-3">
         <input className="inp flex-1" placeholder="Search doctor, hospital, location, type, notes…" value={q} onChange={e => set('q', e.target.value)} aria-label="Search programmes" />
         <button className={cx('btn btn-ghost', nFilters > 0 && '!border-teal !text-teal')} onClick={() => setShowF(s => !s)}><SlidersHorizontal size={15} /> Filters{nFilters ? ` (${nFilters})` : ''}</button>
@@ -77,17 +78,14 @@ export default function Directory({ kind }: { kind: Kind }) {
           <select className="inp" value={status} onChange={e => set('status', e.target.value)} aria-label="Status"><option value="">All statuses</option>{STATUSES.map(s => <option key={s}>{s}</option>)}</select>
           <select className="inp" value={area} onChange={e => set('area', e.target.value)} aria-label="City / state"><option value="">All cities / regions</option>{areas.map(a => <option key={a}>{a}</option>)}</select>
           {kind === 'footankle' && <select className="inp" value={ftype} onChange={e => set('type', e.target.value)} aria-label="Type"><option value="">All types</option>{types.map(a => <option key={a}>{a}</option>)}</select>}
+          <select className="inp" value={spec} onChange={e => set('spec', e.target.value)} aria-label="Specialty"><option value="">Any specialty</option>{SPECIALTY_KEYS.map(([k]) => <option key={k}>{k}</option>)}</select>
           <select className="inp" value={dur} onChange={e => set('dur', e.target.value)} aria-label="Duration"><option value="">Any duration</option><option value="le6">≤ 6 months</option><option value="7-12">7–12 months</option><option value="gt12">&gt; 12 months</option></select>
           <select className="inp" value={stip} onChange={e => set('stip', e.target.value)} aria-label="Stipend"><option value="">Stipend: any</option><option value="yes">Stipend available</option></select>
           <select className="inp" value={win} onChange={e => set('win', e.target.value)} aria-label="Application window"><option value="">Application: any</option><option value="open">Open</option><option value="closed">Closed</option><option value="unknown">Unknown</option></select>
           <button className="btn btn-ghost" onClick={() => setSp(q ? { q } : {})}>Clear filters</button>
           <p className="col-span-full text-[11px] text-slate-400">Duration, stipend and application-open/closed filters read the text in your records; "Unknown" means the sheet doesn't say.</p>
         </Card>)}
-      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
-        <button className={cx('chip', !spec && 'chip-on')} onClick={() => set('spec', '')}>All ({recs.length})</button>
-        {SPECIALTY_KEYS.map(([k]) => <button key={k} className={cx('chip whitespace-nowrap', spec === k && 'chip-on')} onClick={() => set('spec', spec === k ? '' : k)}>{k} ({recs.filter(r => r.tags.includes(k)).length})</button>)}
-      </div>
-      <div className="text-xs text-slate-500 my-2">{list.length} shown</div>
+      <div className="text-xs text-slate-500 my-2">{list.length} shown · {t}</div>
       {list.length === 0 ? <Card><Empty title={recs.length ? 'No programmes match' : 'Nothing here yet'} sub={recs.length ? 'Try clearing a filter.' : 'Add one, or import your Excel in Settings.'} /></Card> :
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">{list.map(r => <RecCard key={r.id} r={r} />)}</div>}
       {adding && <RecForm open initial={adding} onClose={() => setAdding(null)} onSave={r => { upsertRec(r); setAdding(null); nav(`/r/${r.id}`) }} />}

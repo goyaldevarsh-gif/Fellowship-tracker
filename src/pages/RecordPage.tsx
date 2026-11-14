@@ -7,7 +7,7 @@ import { Card, Empty, Field, Modal, StatusBadge, TierBadge, confirmDialog, cx, t
 import { ContactMenu, RecForm } from '../components/RecParts'
 import { fmtDate, relDays, show, todayISO, uid, recTitle, NA } from '../lib/util'
 
-const TABS = ['Overview', 'Application', 'Communication', 'Documents', 'Notes', 'Timeline'] as const
+const TABS = ['Details', 'Updates', 'Documents'] as const
 type Tab = (typeof TABS)[number]
 const KIND_LABEL = { fellowship: 'Fellowships', observership: 'Observerships', footankle: 'Foot & Ankle' }
 const KIND_PATH = { fellowship: '/fellowships', observership: '/observerships', footankle: '/footankle' }
@@ -24,7 +24,7 @@ export default function RecordPage() {
   const { id } = useParams(); const nav = useNavigate()
   const { data, upsertRec, patchRec, setStatus, addComm, removeRec, upsertNote } = useStore()
   const r = data.recs.find(x => x.id === id && !x.deleted)
-  const [tab, setTab] = useState<Tab>('Overview')
+  const [tab, setTab] = useState<Tab>('Details')
   const [edit, setEdit] = useState(false)
   const [statusTo, setStatusTo] = useState<string | null>(null), [statusRemark, setStatusRemark] = useState('')
   const [commOpen, setCommOpen] = useState(false)
@@ -82,7 +82,7 @@ export default function RecordPage() {
         </div>
       </Card>
 
-      {tab === 'Overview' && (
+      {tab === 'Details' && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="p-4">
             <Row icon={GraduationCap} label="Fellowship specialty" value={r.tags.join(', ')} />
@@ -97,7 +97,7 @@ export default function RecordPage() {
           </Card>
         </div>)}
 
-      {tab === 'Application' && (
+      {tab === 'Details' && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="p-4">
             <Row label="Current status" value={String(r.status)} /><Row label="Last update" value={r.lastUpdate ? fmtDate(r.lastUpdate) : ''} />
@@ -116,14 +116,14 @@ export default function RecordPage() {
           </Card>
         </div>)}
 
-      {tab === 'Communication' && (
+      {tab === 'Updates' && (
         <Card className="p-4">
-          <div className="flex justify-between items-center mb-3"><h2 className="font-semibold">Communication history</h2><button className="btn btn-primary" onClick={() => { setC({ date: todayISO(), text: '', channel: 'note' }); setCommOpen(true) }}><Plus size={15} /> Add entry</button></div>
-          {r.comms.length === 0 ? <Empty title="No communication recorded" sub="Log calls, WhatsApp messages and emails here." /> : (
+          <div className="flex justify-between items-center mb-3"><h2 className="font-semibold">Updates</h2><button className="btn btn-primary" onClick={() => { setC({ date: todayISO(), text: '', channel: 'note' }); setCommOpen(true) }}><Plus size={15} /> Add entry</button></div>
+          {timeline.length === 0 ? <Empty title="No updates yet" sub="Log calls, WhatsApp messages and emails here." /> : (
             <ol className="relative border-l border-line ml-2 space-y-4">
-              {[...r.comms].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(x => (
-                <li key={x.id} className="pl-4 relative"><span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-teal" />
-                  <div className="text-xs text-slate-500">{x.date ? fmtDate(x.date) : 'Undated'} · {x.channel || 'note'}</div><div className="text-sm whitespace-pre-line">{x.text}</div></li>))}
+              {[...timeline].reverse().map((x, i) => (
+                <li key={i} className="pl-4 relative"><span className={cx('absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full', x.ch === 'follow' ? 'bg-amber-400' : x.ch === 'status' ? 'bg-violet-500' : 'bg-teal')} />
+                  <div className="text-xs text-slate-500">{x.date ? fmtDate(x.date) : 'Undated'} · {x.ch === 'follow' ? 'follow-up' : x.ch}</div><div className="text-sm whitespace-pre-line">{x.text}</div></li>))}
             </ol>)}
           {r.historyRaw && <details className="mt-4 text-xs text-slate-500"><summary className="cursor-pointer">Original Excel history (preserved)</summary><pre className="whitespace-pre-wrap mt-1 font-sans">{r.historyRaw}</pre></details>}
         </Card>)}
@@ -154,22 +154,6 @@ export default function RecordPage() {
           {docs.length === 0 && <div className="text-xs text-slate-400">Vault is empty — <Link className="text-teal" to="/documents">upload documents</Link> first.</div>}
         </Card>)}
 
-      {tab === 'Notes' && (
-        <Card className="p-4">
-          <div className="flex gap-2 mb-3"><input className="inp" placeholder="Add a note, question or observation…" value={noteText} onChange={e => setNoteText(e.target.value)} />
-            <button className="btn btn-primary" disabled={!noteText.trim()} onClick={() => { upsertNote({ id: uid(), title: recTitle(r), body: noteText.trim(), type: 'institute', recId: r.id, checklist: [], updatedAt: 0 }); setNoteText('') }}>Add</button></div>
-          {notes.length === 0 ? <Empty title="No notes for this programme" /> : notes.map(n => <div key={n.id} className="border-b border-line/60 py-2.5 text-sm whitespace-pre-line">{n.body}<div className="text-[11px] text-slate-400 mt-0.5">{new Date(n.updatedAt).toLocaleDateString()}</div></div>)}
-        </Card>)}
-
-      {tab === 'Timeline' && (
-        <Card className="p-4">
-          {timeline.length === 0 ? <Empty title="No events yet" /> : (
-            <ol className="relative border-l border-line ml-2 space-y-4">{timeline.map((x, i) => (
-              <li key={i} className="pl-4 relative"><span className={cx('absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full', x.ch === 'follow' ? 'bg-amber-400' : x.ch === 'status' ? 'bg-violet-500' : 'bg-teal')} />
-                <div className="text-xs text-slate-500">{x.date ? fmtDate(x.date) : 'Undated'}</div><div className="text-sm">{x.text}</div></li>))}</ol>)}
-          {r.statusLog.length > 0 && <div className="mt-5 pt-3 border-t border-line"><div className="text-xs uppercase text-slate-400 mb-2">Status changes</div>
-            {r.statusLog.map(s => <div key={s.id} className="flex items-center gap-2 text-xs py-1"><span className="w-20 text-slate-500">{fmtDate(s.date)}</span><StatusBadge status={s.from} />→<StatusBadge status={s.to} />{s.remarks && <span className="text-slate-500">{s.remarks}</span>}</div>)}</div>}
-        </Card>)}
 
       <Modal open={statusTo !== null} onClose={() => setStatusTo(null)} title="Update status"
         footer={<><button className="btn btn-ghost" onClick={() => setStatusTo(null)}>Cancel</button><button className="btn btn-primary" onClick={() => { setStatus(r.id, statusTo!, statusRemark.trim() || undefined); setStatusTo(null) }}>Save</button></>}>

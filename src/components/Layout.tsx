@@ -7,18 +7,15 @@ import { cx } from './ui'
 import { daysFromToday } from '../lib/util'
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/', label: 'Home', icon: LayoutDashboard },
   { to: '/fellowships', label: 'Fellowships', icon: Building2 },
-  { to: '/applications', label: 'Applications', icon: Layers },
-  { to: '/observerships', label: 'Observerships', icon: Stethoscope },
-  { to: '/footankle', label: 'Foot & Ankle', icon: Footprints },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/documents', label: 'Documents', icon: FolderOpen },
-  { to: '/calendar', label: 'Calendar & Reminders', icon: CalendarDays },
-  { to: '/compare', label: 'Compare Programmes', icon: Scale },
   { to: '/notes', label: 'Notes', icon: StickyNote },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
-const MOBILE = ['/', '/fellowships', '/applications', '/documents']
+const MOBILE = ['/', '/fellowships', '/calendar', '/documents']
+const SECTIONS: Record<string, string> = { '/observerships': '/fellowships', '/footankle': '/fellowships', '/applications': '/fellowships', '/compare': '/fellowships' }
 
 function SyncPill() {
   const { sync, syncCfg, syncNow } = useStore()
@@ -71,20 +68,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const item = (n: typeof NAV[number], mobile = false) => (
     <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={() => setMore(false)}
       className={({ isActive }) => cx('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-        isActive ? (mobile ? 'bg-teal-50 text-teal-600' : 'bg-navy text-white shadow-soft') : 'text-slate-600 hover:bg-navy-50')}>
+        isActive || SECTIONS[loc.pathname] === n.to || (n.to === '/fellowships' && loc.pathname.startsWith('/r/')) ? (mobile ? 'bg-teal-50 text-teal-600' : 'bg-navy text-white shadow-soft') : 'text-slate-600 hover:bg-navy-50')}>
       <n.icon size={18} />{(!collapsed || mobile) && <span className="truncate">{n.label}</span>}
     </NavLink>
   )
-  const moreActive = !MOBILE.includes(loc.pathname) && !loc.pathname.startsWith('/r/')
+  const moreActive = !MOBILE.includes(loc.pathname) && !SECTIONS[loc.pathname] && !loc.pathname.startsWith('/r/')
   return (
     <div className="h-full flex">
       <aside className={cx('hidden md:flex flex-col border-r border-line bg-white/70 transition-all', collapsed ? 'w-[68px]' : 'w-64')}>
         <div className="flex items-center gap-2.5 px-4 h-16 shrink-0">
           <Mark size={34} />{!collapsed && <div className="leading-tight"><Wordmark size={19} /><div className="text-[9px] tracking-wider text-slate-500 uppercase">Orthopaedic Fellowship Tracker</div></div>}
         </div>
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">{NAV.map(n => item(n))}</nav>
-        <div className="p-3 border-t border-line">
-          {!collapsed && <div className="rounded-xl bg-teal-50 text-teal-600 text-xs p-3 mb-2 leading-snug">Plan. Apply. Track. Get Selected.</div>}
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">{NAV.slice(0, 5).map(n => item(n))}</nav>
+        <div className="p-3 border-t border-line space-y-1">
+          {item(NAV[5])}
           <button className="btn btn-ghost w-full !py-1.5" onClick={() => setCollapsed(c => !c)} aria-label="Toggle sidebar">{collapsed ? <PanelLeft size={16} /> : <><PanelLeftClose size={16} /> Collapse</>}</button>
         </div>
       </aside>
@@ -102,16 +99,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 md:pb-8"><div className="max-w-7xl mx-auto p-3 md:p-6">{children}</div></main>
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-line grid grid-cols-5 pb-safe">
-          {[NAV[0], NAV[1], NAV[2], NAV[5]].map(n => (
-            <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium', isActive ? 'text-teal' : 'text-slate-500')}>
-              <n.icon size={20} />{n.label.split(' ')[0]}</NavLink>))}
+          {NAV.slice(0, 4).map(n => (
+            <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium', isActive || SECTIONS[loc.pathname] === n.to || (n.to === '/fellowships' && loc.pathname.startsWith('/r/')) ? 'text-teal' : 'text-slate-500')}>
+              <n.icon size={20} />{n.label}</NavLink>))}
           <button className={cx('flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium', moreActive ? 'text-teal' : 'text-slate-500')} onClick={() => setMore(true)}><MoreHorizontal size={20} />More</button>
         </nav>
         {more && (
           <div className="md:hidden fixed inset-0 z-50 bg-navy/40" onClick={() => setMore(false)}>
             <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl p-4 pb-safe" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-2"><span className="font-semibold">Menu</span><button aria-label="Close menu" onClick={() => setMore(false)}><X size={20} /></button></div>
-              <div className="grid grid-cols-2 gap-1">{NAV.filter(n => !['/', '/fellowships', '/applications', '/documents'].includes(n.to)).map(n => item(n, true))}
+              <div className="grid grid-cols-2 gap-1">{NAV.slice(4).map(n => item(n, true))}
                 <button className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-navy-50" onClick={() => { setMore(false); nav('/profile') }}><UserRound size={18} />My Profile</button></div>
             </div>
           </div>)}
