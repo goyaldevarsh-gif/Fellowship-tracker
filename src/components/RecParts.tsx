@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Phone, MessageCircle, Mail, MapPin, Clock, CalendarClock, Copy, ChevronDown, Paperclip, Share2 } from 'lucide-react'
 import type { Rec, Kind } from '../types'
 import { STATUSES } from '../types'
-import { StatusBadge, TierBadge, Field, Modal, toast, cx } from './ui'
+import { StatusBadge, PriorityBadge, Field, Modal, toast, cx } from './ui'
 import { useStore } from '../lib/store'
 import { loadPack, packDocs } from '../lib/pack'
 import { downloadBlob } from '../lib/util'
@@ -73,7 +73,7 @@ export function RecCard({ r }: { r: Rec }) {
     <Link to={`/r/${r.id}`} className="card p-4 block min-w-0 overflow-hidden hover:shadow-md hover:border-teal/40 transition group">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5"><TierBadge tier={r.tier} />{r.type && <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">{r.type}</span>}</div>
+          <div className="flex items-center gap-1.5 mb-0.5"><PriorityBadge priority={r.priority} />{r.type && <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">{r.type}</span>}</div>
           <div className="font-semibold text-navy leading-snug">{recTitle(r)}</div>
           <div className="text-sm text-slate-600 truncate">{r.doctor || 'Doctor not stated'}</div>
         </div>
@@ -90,7 +90,7 @@ export function RecCard({ r }: { r: Rec }) {
 }
 
 const EMPTY = (kind: Kind, sno: number): Rec => ({
-  id: `${kind}-${sno}`, kind, sno, tier: kind === 'fellowship' ? 3 : undefined, area: '', doctor: '', hospital: '', location: '', duration: '',
+  id: `${kind}-${sno}`, kind, sno, tier: undefined, area: '', doctor: '', hospital: '', location: '', duration: '',
   phone: '', email: '', status: 'Not started', nextStep: '', remarks: '', historyRaw: '', seats: '', stipend: '', eligibility: '',
   howToApply: '', website: '', notes: '', tags: [], comms: [], statusLog: [], docLinks: [], updatedAt: 0,
 })
@@ -110,7 +110,7 @@ export function RecForm({ open, initial, onClose, onSave }: { open: boolean; ini
       <div className="grid md:grid-cols-2 gap-3">
         {inp('hospital', 'Hospital / Institute *')}{inp('doctor', 'Doctor / Faculty')}
         {inp('location', 'Location (City, State)')}{inp('area', 'Area / region')}
-        {r.kind === 'fellowship' && <Field label="Tier"><select className="inp" value={r.tier ?? 3} onChange={e => set('tier', Number(e.target.value))}><option value={1}>Tier 1</option><option value={2}>Tier 2</option><option value={3}>Tier 3</option></select></Field>}
+        {r.kind === 'fellowship' && <Field label="Priority (1 = first)"><input className="inp" type="number" min={1} value={r.priority ?? ''} onChange={e => set('priority', e.target.value ? Math.max(1, Number(e.target.value)) : undefined)} /></Field>}
         {r.kind === 'footankle' && inp('type', 'Type (programme / surgeon / IFAS centre / observership)')}
         {inp('duration', 'Duration')}
         <Field label="Status"><select className="inp" value={String(r.status)} onChange={e => set('status', e.target.value)}>{STATUSES.map(s => <option key={s}>{s}</option>)}</select></Field>

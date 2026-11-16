@@ -7,9 +7,11 @@ export const cx = (...a: (string | false | null | undefined)[]) => a.filter(Bool
 export const StatusBadge = ({ status, className }: { status: string; className?: string }) => (
   <span className={cx('inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap', STATUS_STYLE[status] || 'bg-slate-100 text-slate-600', className)}>{status}</span>
 )
-export const TierBadge = ({ tier }: { tier?: number }) => !tier ? null : (
+export const prio = (r: { priority?: number }) => r.priority ?? 999
+export const band = (p?: number) => !p ? 3 : p <= 10 ? 1 : p <= 20 ? 2 : 3
+export const PriorityBadge = ({ priority }: { priority?: number }) => !priority ? null : (
   <span className={cx('inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-    tier === 1 ? 'bg-teal-100 text-teal-600' : tier === 2 ? 'bg-navy-100 text-navy-600' : 'bg-slate-100 text-slate-500')}>T{tier}</span>
+    priority <= 10 ? 'bg-teal-100 text-teal-600' : priority <= 20 ? 'bg-navy-100 text-navy-600' : 'bg-slate-100 text-slate-500')}>#{priority}</span>
 )
 export const Card = ({ className, children, ...p }: React.HTMLAttributes<HTMLDivElement>) => <div className={cx('card', className)} {...p}>{children}</div>
 export const H = ({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) => (

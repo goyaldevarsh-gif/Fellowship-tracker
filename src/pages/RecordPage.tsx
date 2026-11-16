@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2, MapPin, Clock, Wallet, GraduationCap, Users, ExternalLink, Plus, Check, Link2, FileText, ArrowRightLeft } from 'lucide-react'
 import { STATUSES, type Rec } from '../types'
 import { useStore } from '../lib/store'
-import { Card, Empty, Field, Modal, StatusBadge, TierBadge, confirmDialog, cx, toast } from '../components/ui'
+import { Card, Empty, Field, Modal, StatusBadge, PriorityBadge, confirmDialog, cx, toast } from '../components/ui'
 import { ContactMenu, RecForm } from '../components/RecParts'
 import { fmtDate, relDays, show, todayISO, uid, recTitle, NA } from '../lib/util'
 
@@ -45,9 +45,9 @@ export default function RecordPage() {
     ...r.docLinks.filter(l => l.sent).map(l => ({ date: l.sentOn || '', text: `Sent: ${docs.find(d => d.id === l.docId)?.title || 'document'}${l.via ? ' via ' + l.via : ''}`, ch: 'doc' as const })),
   ].sort((a, b) => (a.date || '0000').localeCompare(b.date || '0000'))
 
-  const doConvert = (tier: number) => {
+  const doConvert = () => {
     const sno = Math.max(0, ...data.recs.filter(x => x.kind === 'fellowship').map(x => Number(x.sno) || 0)) + 1
-    const n: Rec = { ...r, id: `fellowship-${sno}`, kind: 'fellowship', sno, tier, type: undefined, status: 'Not started', comms: [{ id: uid(), date: todayISO(), text: `Converted from observership #${r.sno}`, channel: 'note', source: 'app' }], statusLog: [], docLinks: [], original: undefined, importedAt: undefined, updatedAt: 0 }
+    const n: Rec = { ...r, id: `fellowship-${sno}`, kind: 'fellowship', sno, tier: undefined, priority: Math.max(0, ...data.recs.filter(x => x.kind === 'fellowship' && !x.deleted).map(x => x.priority || 0)) + 1, type: undefined, status: 'Not started', comms: [{ id: uid(), date: todayISO(), text: `Converted from observership #${r.sno}`, channel: 'note', source: 'app' }], statusLog: [], docLinks: [], original: undefined, importedAt: undefined, updatedAt: 0 }
     upsertRec(n); setConvert(false); toast('Added to Fellowships'); nav(`/r/${n.id}`)
   }
 
@@ -64,7 +64,7 @@ export default function RecordPage() {
       <Card className="p-4 md:p-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1"><TierBadge tier={r.tier} />{r.type && <span className="text-xs font-semibold text-slate-500">{r.type}</span>}<span className="text-xs text-slate-400">#{r.sno}</span></div>
+            <div className="flex items-center gap-2 mb-1"><PriorityBadge priority={r.priority} />{r.type && <span className="text-xs font-semibold text-slate-500">{r.type}</span>}<span className="text-xs text-slate-400">S.No {r.sno}</span></div>
             <h1 className="text-xl md:text-2xl font-bold leading-tight">{recTitle(r)}</h1>
             <div className="text-slate-600">{r.doctor || 'Doctor not stated'}</div>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -169,8 +169,8 @@ export default function RecordPage() {
         </div>
       </Modal>
       <Modal open={convert} onClose={() => setConvert(false)} title="Convert to fellowship application">
-        <p className="text-sm text-slate-600 mb-3">Creates a new fellowship record from this observership (this observership stays as it is). Choose a tier:</p>
-        <div className="flex gap-2">{[1, 2, 3].map(t => <button key={t} className="btn btn-ghost flex-1" onClick={() => doConvert(t)}>Tier {t}</button>)}</div>
+        <p className="text-sm text-slate-600 mb-3">Creates a new fellowship record from this observership (this observership stays as it is). It goes to the end of your priority list; change the number on the programme to move it.</p>
+        <div className="flex gap-2"><button className="btn btn-ghost flex-1" onClick={() => doConvert()}>Add to Fellowships</button></div>
       </Modal>
       {edit && <RecForm open initial={r} onClose={() => setEdit(false)} onSave={n => { upsertRec(n); setEdit(false) }} />}
     </div>

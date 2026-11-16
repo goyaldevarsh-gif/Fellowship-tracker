@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 import { useRecs, useStore } from '../lib/store'
-import { Card, Empty, H, Stars, StatusBadge, TierBadge } from '../components/ui'
+import { Card, Empty, H, Stars, StatusBadge, PriorityBadge } from '../components/ui'
 import { recTitle, show } from '../lib/util'
 import type { Ratings } from '../types'
 
@@ -34,7 +34,7 @@ export default function Compare() {
           <Card className="overflow-x-auto">
             <table className="w-full text-sm min-w-[600px]">
               <thead><tr className="border-b border-line"><th className="w-40 p-3" />{sel.map(r => (
-                <th key={r.id} className="p-3 text-left align-top"><div className="flex items-start justify-between gap-2"><div><div className="flex gap-1 mb-0.5"><TierBadge tier={r.tier} /></div><div className="font-semibold">{recTitle(r)}</div></div>
+                <th key={r.id} className="p-3 text-left align-top"><div className="flex items-start justify-between gap-2"><div><div className="flex gap-1 mb-0.5"><PriorityBadge priority={r.priority} /></div><div className="font-semibold">{recTitle(r)}</div></div>
                   <button aria-label="Remove" className="text-slate-400 hover:text-red-600" onClick={() => save(ids.filter(i => i !== r.id))}><X size={15} /></button></div></th>))}</tr></thead>
               <tbody>{FACTS.map(([label, fn]) => (
                 <tr key={label} className="border-b border-line/60"><td className="p-3 text-xs font-medium text-slate-500 align-top">{label}</td>

@@ -31,6 +31,7 @@ export interface Rec {
   kind: Kind
   sno: number | string
   tier?: number
+  priority?: number
   type?: string // F&A programme type
   area: string
   doctor: string

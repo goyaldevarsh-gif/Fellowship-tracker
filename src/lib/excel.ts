@@ -48,7 +48,7 @@ export function rowsToRecs(rows: any[][], kind: Kind): Rec[] {
     // date cells typed as text keep their text in remarks of original only
     const ft = rawDateText(g('Follow-up date')); if (ft) r.remarks = (r.remarks ? r.remarks + '\n' : '') + `Follow-up: ${ft}`
     if (kind === 'fellowship') {
-      r.tier = Number(g('Tier')) || undefined
+      r.tier = Number(g('Tier')) || undefined; r.priority = Number(g('Priority')) || undefined
       r.hospital = s(g('Hospital')); r.duration = s(g('Duration')); r.historyRaw = s(g('History'))
       r.seats = s(g('Seats')); r.stipend = s(g('Stipend / fee')); r.eligibility = s(g('Eligibility'))
       r.howToApply = s(g('How to apply')); r.website = s(g('Website')); r.notes = s(g('Notes'))
@@ -78,6 +78,7 @@ export async function parseWorkbook(file: File): Promise<{ recs: Rec[]; sheets: 
   return { recs, sheets, warnings }
 }
 
+const bandOf = (p?: number) => !p ? 3 : p <= 10 ? 1 : p <= 20 ? 2 : 3
 const SOURCE_FIELDS: (keyof Rec)[] = [
   'tier', 'type', 'area', 'doctor', 'hospital', 'location', 'duration', 'phone', 'email', 'status', 'lastUpdate', 'nextStep',
   'followUp', 'remarks', 'historyRaw', 'seats', 'stipend', 'eligibility', 'howToApply', 'website', 'notes',
@@ -127,7 +128,7 @@ export function applyImport(data: AppData, items: ImportItem[], accept: (i: Impo
   return { ...data, recs }
 }
 
-const HEAD_F = ['S.No', 'Tier', 'Area', 'Doctor', 'Hospital', 'Location', 'Duration', 'Phone', 'Email', 'Status', 'Last update', 'Next step', 'Follow-up date', 'Remarks', 'History', 'Seats', 'Stipend / fee', 'Eligibility', 'How to apply', 'Website', 'Notes']
+const HEAD_F = ['S.No', 'Priority', 'Tier', 'Area', 'Doctor', 'Hospital', 'Location', 'Duration', 'Phone', 'Email', 'Status', 'Last update', 'Next step', 'Follow-up date', 'Remarks', 'History', 'Seats', 'Stipend / fee', 'Eligibility', 'How to apply', 'Website', 'Notes']
 const HEAD_O = ['S.No', 'Area', 'Doctor', 'Hospital / Clinic', 'Location', 'Kya karte hain (verified)', 'Phone', 'Email', 'Status', 'Last update', 'Next step', 'Follow-up date', 'Remarks', 'Source']
 const HEAD_A = ['S.No', 'Type', 'Area', 'Doctor', 'Hospital / Clinic', 'Location', 'Kya hai (verified)', 'Phone', 'Email', 'Status', 'Last update', 'Next step', 'Follow-up date', 'Remarks', 'Source']
 const D = (iso?: string) => (iso ? new Date(iso + 'T00:00:00') : '')
@@ -141,18 +142,18 @@ export function exportWorkbook(data: AppData): XLSX.WorkBook {
   const by = (k: Kind) => data.recs.filter(r => !r.deleted && r.kind === k).sort((a, b) => Number(a.sno) - Number(b.sno))
   const F = by('fellowship')
   // Summary
-  const sumRows: any[][] = [['FellowTrack — Fellowship Application Summary'], [`Exported ${todayISO()}`], [], ['Status', 'Tier 1', 'Tier 2', 'Tier 3', 'Total']]
+  const sumRows: any[][] = [['FellowTrack — Fellowship Application Summary'], [`Exported ${todayISO()}`], [], ['Status', 'Top 10', '11–20', '21+', 'Total']]
   const st = new Set<string>([...STATUSES, ...F.map(r => String(r.status))])
   st.forEach(x => {
-    const c = (t: number) => F.filter(r => r.status === x && r.tier === t).length
+    const c = (t: number) => F.filter(r => r.status === x && bandOf(r.priority) === t).length
     sumRows.push([x, c(1), c(2), c(3), F.filter(r => r.status === x).length])
   })
-  sumRows.push(['Total', ...[1, 2, 3].map(t => F.filter(r => r.tier === t).length), F.length])
+  sumRows.push(['Total', ...[1, 2, 3].map(t => F.filter(r => bandOf(r.priority) === t).length), F.length])
   const wsS = XLSX.utils.aoa_to_sheet(sumRows); wsS['!cols'] = [{ wch: 24 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }]
   XLSX.utils.book_append_sheet(wb, wsS, 'Summary')
-  const fin = F.map(r => [r.sno, r.tier, r.area, r.doctor, r.hospital, r.location, r.duration, r.phone, r.email, r.status, D(r.lastUpdate), r.nextStep, D(r.followUp), r.remarks, historyOut(r), r.seats, r.stipend, r.eligibility, r.howToApply, r.website, r.notes])
+  const fin = F.slice().sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999) || Number(a.sno) - Number(b.sno)).map(r => [r.sno, r.priority, r.tier, r.area, r.doctor, r.hospital, r.location, r.duration, r.phone, r.email, r.status, D(r.lastUpdate), r.nextStep, D(r.followUp), r.remarks, historyOut(r), r.seats, r.stipend, r.eligibility, r.howToApply, r.website, r.notes])
   const w1 = XLSX.utils.aoa_to_sheet([HEAD_F, ...fin], { cellDates: true })
-  w1['!cols'] = HEAD_F.map((h, i) => ({ wch: [6, 5, 22, 24, 28, 20, 12, 18, 26, 14, 12, 22, 12, 30, 40, 18, 18, 26, 30, 22, 40][i] }))
+  w1['!cols'] = HEAD_F.map((h, i) => ({ wch: [6, 8, 5, 22, 24, 28, 20, 12, 18, 26, 14, 12, 22, 12, 30, 40, 18, 18, 26, 30, 22, 40][i] }))
   XLSX.utils.book_append_sheet(wb, w1, 'Final List')
   const O = by('observership').map(r => [r.sno, r.area, r.doctor, r.hospital, r.location, r.notes, r.phone, r.email, r.status, D(r.lastUpdate), r.nextStep, D(r.followUp), r.remarks, r.website])
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([HEAD_O, ...O], { cellDates: true }), 'Observership')

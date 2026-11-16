@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Target, ArrowRight, PauseCircle, MapPin, Phone } from 'lucide-react'
 import { useRecs, useStore } from '../lib/store'
-import { Card, TierBadge, StatusBadge, cx, toast } from './ui'
+import { Card, PriorityBadge, StatusBadge, cx, toast, prio, band } from './ui'
 import { ContactMenu } from './RecParts'
 import { addDays, daysFromToday, recTitle, relDays, show, todayISO } from '../lib/util'
 import type { Rec } from '../types'
@@ -13,12 +13,12 @@ export function useQueue() {
   return useMemo(() => {
     const live = recs.filter(r => !DONE.includes(String(r.status)) && !r.parked)
     const due = live.filter(r => r.followUp && (daysFromToday(r.followUp) ?? 1) <= 0).sort((a, b) => (a.followUp || '').localeCompare(b.followUp || ''))
-    const fresh = (t: number) => live.filter(r => r.tier === t && r.status === 'Not started').sort((a, b) => Number(a.sno) - Number(b.sno))
+    const fresh = (t: number) => live.filter(r => band(r.priority) === t && r.status === 'Not started').sort((a, b) => prio(a) - prio(b) || Number(a.sno) - Number(b.sno))
     const q: { rec: Rec; why: string }[] = [
       ...due.map(rec => ({ rec, why: `Follow-up ${relDays(rec.followUp)}` })),
-      ...fresh(1).map(rec => ({ rec, why: 'Tier 1 — not contacted yet' })),
-      ...fresh(2).map(rec => ({ rec, why: 'Tier 2 — not contacted yet' })),
-      ...fresh(3).map(rec => ({ rec, why: 'Tier 3 — start outreach' })),
+      ...fresh(1).map(rec => ({ rec, why: `Priority #${rec.priority} — not contacted yet` })),
+      ...fresh(2).map(rec => ({ rec, why: `Priority #${rec.priority} — not contacted yet` })),
+      ...fresh(3).map(rec => ({ rec, why: rec.priority ? `Priority #${rec.priority} — start outreach` : 'Not ranked — start outreach' })),
     ]
     const seen = new Set<string>()
     const list = q.filter(x => (seen.has(x.rec.id) ? false : (seen.add(x.rec.id), true)))
@@ -30,7 +30,7 @@ export default function NextUp() {
   const { list, counts } = useQueue()
   const { setStatus, patchRec, data } = useStore()
   const cur = list[0]
-  const phase = counts.due ? `${counts.due} follow-up(s) due` : counts.t1 ? 'Tier 1 outreach' : counts.t2 ? 'Tier 2 outreach' : counts.t3 ? 'Tier 3 outreach' : 'All caught up'
+  const phase = counts.due ? `${counts.due} follow-up(s) due` : counts.t1 ? 'Top 10 outreach' : counts.t2 ? 'Priority 11–20 outreach' : counts.t3 ? 'Remaining outreach' : 'All caught up'
   const mark = (r: Rec, to: string, remark: string) => {
     setStatus(r.id, to, remark)
     // CV sent -> follow-up in 4 days (editable on the programme); a call clears a due follow-up
@@ -53,7 +53,7 @@ export default function NextUp() {
         <div className="mt-3 rounded-2xl bg-white border border-line p-4">
           <div className="text-[11px] uppercase tracking-wide text-teal font-semibold">{cur.why}</div>
           <div className="flex items-start justify-between gap-3 mt-1">
-            <div className="min-w-0"><div className="flex items-center gap-2"><TierBadge tier={cur.rec.tier} /><Link to={`/r/${cur.rec.id}`} className="font-semibold text-lg leading-tight hover:text-teal">{recTitle(cur.rec)}</Link></div>
+            <div className="min-w-0"><div className="flex items-center gap-2"><PriorityBadge priority={cur.rec.priority} /><Link to={`/r/${cur.rec.id}`} className="font-semibold text-lg leading-tight hover:text-teal">{recTitle(cur.rec)}</Link></div>
               <div className="text-sm text-slate-600">{show(cur.rec.doctor)}</div>
               <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-3"><span className="inline-flex items-center gap-1"><MapPin size={12} />{show(cur.rec.location)}</span><span className="inline-flex items-center gap-1"><Phone size={12} />{show(cur.rec.phone).split('\n')[0]}</span></div>
               {cur.rec.nextStep && <div className="text-xs text-slate-500 mt-1">Next step: {cur.rec.nextStep}</div>}</div>
@@ -70,7 +70,7 @@ export default function NextUp() {
         </div>)}
       {list.length > 1 && <div className="mt-3"><div className="text-[11px] text-slate-400 mb-1">Then</div>
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">{list.slice(1, 6).map(x => <Link key={x.rec.id} to={`/r/${x.rec.id}`} className={cx('shrink-0 max-w-[220px] rounded-xl border border-line bg-white px-3 py-2 text-xs hover:bg-navy-50')}><div className="font-medium truncate">{recTitle(x.rec)}</div><div className="text-slate-500 truncate">{x.why}</div></Link>)}</div></div>}
-      <p className="text-[11px] text-slate-400 mt-3">Order: due follow-ups → Tier 1 → Tier 2 → Tier 3. "Park" sets a programme aside (e.g. check later) and it moves to the next one.</p>
+      <p className="text-[11px] text-slate-400 mt-3">Order: due follow-ups → priority list (1, 2, 3…). "Park" sets a programme aside (e.g. check later) and it moves to the next one.</p>
     </Card>
   )
 }

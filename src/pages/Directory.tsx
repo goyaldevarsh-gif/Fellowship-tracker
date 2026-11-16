@@ -5,7 +5,7 @@ import { Plus, SlidersHorizontal, LayoutGrid, Scale } from 'lucide-react'
 import type { Kind, Rec } from '../types'
 import { STATUSES } from '../types'
 import { useRecs, useStore } from '../lib/store'
-import { Card, Empty, H, cx } from '../components/ui'
+import { Card, Empty, H, cx, prio, band } from '../components/ui'
 import { RecCard, RecForm, newRec } from '../components/RecParts'
 import { SPECIALTY_KEYS, recTitle } from '../lib/util'
 
@@ -28,7 +28,7 @@ export default function Directory({ kind }: { kind: Kind }) {
   const [sp, setSp] = useSearchParams(); const nav = useNavigate()
   const [adding, setAdding] = useState<Rec | null>(null)
   const [showF, setShowF] = useState(false)
-  const parked = sp.get('parked') || '', q = sp.get('q') || '', status = sp.get('status') || '', tier = sp.get('tier') || '', area = sp.get('area') || ''
+  const parked = sp.get('parked') || '', q = sp.get('q') || '', status = sp.get('status') || '', tier = sp.get('band') || '', area = sp.get('area') || ''
   const spec = sp.get('spec') || '', dur = sp.get('dur') || '', stip = sp.get('stip') || '', win = sp.get('win') || '', sort = sp.get('sort') || 'default', ftype = sp.get('type') || ''
   const set = (k: string, v: string) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n, { replace: true }) }
   const areas = useMemo(() => Array.from(new Set(recs.map(r => r.area).filter(Boolean))).sort(), [recs])
@@ -40,7 +40,7 @@ export default function Directory({ kind }: { kind: Kind }) {
       if (s && ![r.doctor, r.hospital, r.location, r.type, r.duration, r.notes, r.remarks, r.howToApply, r.eligibility, r.tags.join(' ')].join(' ').toLowerCase().includes(s)) return false
       if (parked && !r.parked) return false
       if (status && r.status !== status) return false
-      if (tier && String(r.tier) !== tier) return false
+      if (tier && String(band(r.priority)) !== tier) return false
       if (area && r.area !== area) return false
       if (ftype && r.type !== ftype) return false
       if (spec && !r.tags.includes(spec)) return false
@@ -50,8 +50,7 @@ export default function Directory({ kind }: { kind: Kind }) {
       return true
     })
     const key: Record<string, (a: Rec, b: Rec) => number> = {
-      default: (a, b) => (a.tier || 9) - (b.tier || 9) || Number(a.sno) - Number(b.sno),
-      tier: (a, b) => (a.tier || 9) - (b.tier || 9) || recTitle(a).localeCompare(recTitle(b)),
+      default: (a, b) => prio(a) - prio(b) || Number(a.sno) - Number(b.sno),
       city: (a, b) => a.location.localeCompare(b.location),
       status: (a, b) => STATUSES.indexOf(a.status as any) - STATUSES.indexOf(b.status as any),
       follow: (a, b) => (a.followUp || '9999').localeCompare(b.followUp || '9999'),
@@ -69,12 +68,12 @@ export default function Directory({ kind }: { kind: Kind }) {
         <input className="inp flex-1" placeholder="Search doctor, hospital, location, type, notes…" value={q} onChange={e => set('q', e.target.value)} aria-label="Search programmes" />
         <button className={cx('btn btn-ghost', nFilters > 0 && '!border-teal !text-teal')} onClick={() => setShowF(s => !s)}><SlidersHorizontal size={15} /> Filters{nFilters ? ` (${nFilters})` : ''}</button>
         <select className="inp !w-auto" value={sort} onChange={e => set('sort', e.target.value === 'default' ? '' : e.target.value)} aria-label="Sort">
-          <option value="default">Sort: Default</option><option value="tier">Tier</option><option value="city">City</option><option value="status">Status</option><option value="follow">Follow-up date</option><option value="institute">Institute</option>
+          <option value="default">Sort: Priority</option><option value="city">City</option><option value="status">Status</option><option value="follow">Follow-up date</option><option value="institute">Institute</option>
         </select>
       </div>
       {showF && (
         <Card className="p-3 mb-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-          {kind === 'fellowship' && <select className="inp" value={tier} onChange={e => set('tier', e.target.value)} aria-label="Tier"><option value="">All tiers</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option></select>}
+          {kind === 'fellowship' && <select className="inp" value={tier} onChange={e => set('band', e.target.value)} aria-label="Priority"><option value="">All priorities</option><option value="1">Top 10</option><option value="2">Priority 11–20</option><option value="3">Priority 21+</option></select>}
           <select className="inp" value={status} onChange={e => set('status', e.target.value)} aria-label="Status"><option value="">All statuses</option>{STATUSES.map(s => <option key={s}>{s}</option>)}</select>
           <select className="inp" value={area} onChange={e => set('area', e.target.value)} aria-label="City / state"><option value="">All cities / regions</option>{areas.map(a => <option key={a}>{a}</option>)}</select>
           {kind === 'footankle' && <select className="inp" value={ftype} onChange={e => set('type', e.target.value)} aria-label="Type"><option value="">All types</option>{types.map(a => <option key={a}>{a}</option>)}</select>}
